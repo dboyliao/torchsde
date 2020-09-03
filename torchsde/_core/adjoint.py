@@ -77,19 +77,10 @@ class _SdeintAdjointMethod(torch.autograd.Function):
 
         for i in range(ys.size(0) - 1, 0, -1):
             aug_state = misc.flatten(aug_state)
-            aug_state = sdeint.integrate(
-                sde=adjoint_sde,
-                y0=aug_state,
-                ts=torch.stack([-ts[i], -ts[i - 1]]),
-                bm=reverse_bm,
-                method=adjoint_method,
-                dt=dt,
-                adaptive=adjoint_adaptive,
-                rtol=adjoint_rtol,
-                atol=adjoint_atol,
-                dt_min=dt_min,
-                options=adjoint_options
-            )
+            aug_state = _SdeintAdjointMethod.apply(adjoint_sde, torch.stack([-ts[i], -ts[i - 1]]), dt, reverse_bm,
+                                                   adjoint_method, adjoint_method, adjoint_adaptive, adjoint_adaptive,
+                                                   adjoint_rtol, adjoint_rtol, adjoint_atol, adjoint_atol, dt_min,
+                                                   adjoint_options, adjoint_options, aug_state, *params)
             aug_state = misc.flat_to_shape(aug_state[1], shapes)  # Unpack the state at time -ts[i - 1].
             aug_state[0] = ys[i - 1]
             aug_state[1] = aug_state[1] + grad_ys[i - 1]
