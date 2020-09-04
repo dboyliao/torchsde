@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Dict, Any
-
 import torch
 from torch import nn
 
@@ -23,7 +21,7 @@ from . import sdeint
 from .adjoint_sde import AdjointSDE
 from .._brownian import BaseBrownian, ReverseBrownian
 from ..settings import METHODS, SDE_TYPES, NOISE_TYPES
-from ..types import Scalar, Vector
+from ..types import Scalar, Vector, Optional, Dict, Any, Tensor
 
 
 class _SdeintAdjointMethod(torch.autograd.Function):
@@ -100,7 +98,7 @@ class _SdeintAdjointMethod(torch.autograd.Function):
 
 
 def sdeint_adjoint(sde: nn.Module,
-                   y0: torch.Tensor,
+                   y0: Tensor,
                    ts: Vector,
                    bm: Optional[BaseBrownian] = None,
                    method: Optional[str] = "srk",
@@ -116,7 +114,7 @@ def sdeint_adjoint(sde: nn.Module,
                    options: Optional[Dict[str, Any]] = None,
                    adjoint_options: Optional[Dict[str, Any]] = None,
                    names: Optional[Dict[str, str]] = None,
-                   **unused_kwargs) -> torch.Tensor:
+                   **unused_kwargs) -> Tensor:
     """Numerically integrate an Itô SDE with stochastic adjoint support.
 
     Args:
@@ -134,7 +132,7 @@ def sdeint_adjoint(sde: nn.Module,
         method (str, optional): Name of numerical integration method.
         adjoint_method (str, optional): Name of numerical integration method for
             backward adjoint solve. Defaults to a sensible choice depending on
-                the noise type of the supplied SDE.
+            the noise type of the supplied SDE.
         dt (float, optional): The constant step size or initial step size for
             adaptive time-stepping.
         adaptive (bool, optional): If `True`, use adaptive time-stepping.
@@ -170,7 +168,7 @@ def sdeint_adjoint(sde: nn.Module,
 
     sde, y0, ts, bm = sdeint.check_contract(sde, y0, ts, bm, method, names)
     adjoint_method = _select_default_adjoint_method(sde, adjoint_method)
-    params = list(filter(lambda x: x.requires_grad, sde.parameters()))
+    params = filter(lambda x: x.requires_grad, sde.parameters())
 
     return _SdeintAdjointMethod.apply(  # noqa
         sde, ts, dt, bm, method, adjoint_method, adaptive, adjoint_adaptive, rtol, adjoint_rtol, atol,
